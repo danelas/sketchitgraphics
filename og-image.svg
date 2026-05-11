@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b0b10"/>
+      <stop offset="100%" stop-color="#1a0c00"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff5a1f"/>
+      <stop offset="100%" stop-color="#ffb800"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.2" cy="0.3">
+      <stop offset="0%" stop-color="rgba(255,90,31,.35)"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Logo mark -->
+  <rect x="80" y="80" width="76" height="76" rx="18" fill="url(#brand)"/>
+  <text x="118" y="138" text-anchor="middle" font-family="Impact, 'Bebas Neue', sans-serif" font-size="58" font-weight="700" fill="#1a0c00">S</text>
+
+  <!-- Logo wordmark -->
+  <text x="178" y="118" font-family="'Bebas Neue', Impact, sans-serif" font-size="36" fill="#fff" letter-spacing="1">SKETCH IT</text>
+  <text x="178" y="152" font-family="'Bebas Neue', Impact, sans-serif" font-size="28" fill="#ffb800" letter-spacing="3">— GRAPHICS —</text>
+
+  <!-- Hero headline -->
+  <text x="80" y="290" font-family="'Bebas Neue', Impact, sans-serif" font-size="96" fill="#fff" letter-spacing="1">Custom Heat Transfers.</text>
+  <text x="80" y="380" font-family="'Bebas Neue', Impact, sans-serif" font-size="96" fill="url(#brand)" letter-spacing="1">Instant Quotes.</text>
+
+  <!-- Subline -->
+  <text x="80" y="445" font-family="Inter, Arial, sans-serif" font-size="28" fill="#9ea0b3">Plastisol · DTF · Screen-Print  ·  Flat $30 color separation  ·  Made in USA</text>
+
+  <!-- Pill badges -->
+  <g font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700">
+    <rect x="80" y="500" width="240" height="56" rx="28" fill="#1f2030" stroke="#2a2c3d"/>
+    <text x="200" y="535" text-anchor="middle" fill="#ffb800">⭐ 4.9 / 2,400+ reviews</text>
+
+    <rect x="340" y="500" width="200" height="56" rx="28" fill="#1f2030" stroke="#2a2c3d"/>
+    <text x="440" y="535" text-anchor="middle" fill="#22c55e">⚡ 24-hr rush</text>
+
+    <rect x="560" y="500" width="240" height="56" rx="28" fill="#1f2030" stroke="#2a2c3d"/>
+    <text x="680" y="535" text-anchor="middle" fill="#fff">💸 10% lifetime affiliate</text>
+  </g>
+
+  <!-- URL bottom-right -->
+  <text x="1120" y="590" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="600" fill="#9ea0b3">sketchitgraphics.com</text>
+</svg>

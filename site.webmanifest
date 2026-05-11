@@ -1,0 +1,60 @@
+{
+  "name": "Sketch It Graphics — Custom Heat Transfers",
+  "short_name": "Sketch It Graphics",
+  "description": "Custom plastisol, DTF, and screen-print heat transfers with instant online quotes and flat $30 color separation.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b10",
+  "theme_color": "#ff5a1f",
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["business", "shopping", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Get instant quote",
+      "short_name": "Quote",
+      "description": "Upload artwork and get instant pricing on custom heat transfers",
+      "url": "/#quote",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Order sample pack",
+      "short_name": "Samples",
+      "url": "/#samples",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Affiliate signup",
+      "short_name": "Affiliate",
+      "url": "/#affiliate",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}
