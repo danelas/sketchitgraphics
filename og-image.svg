@@ -34,11 +34,11 @@
 
   <!-- Pill badges -->
   <g font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700">
-    <rect x="80" y="500" width="240" height="56" rx="28" fill="#1f2030" stroke="#2a2c3d"/>
-    <text x="200" y="535" text-anchor="middle" fill="#ffb800">⭐ 4.9 / 2,400+ reviews</text>
+    <rect x="80" y="500" width="260" height="56" rx="28" fill="#1f2030" stroke="#2a2c3d"/>
+    <text x="210" y="535" text-anchor="middle" fill="#ffb800">🏆 30 years in business</text>
 
-    <rect x="340" y="500" width="200" height="56" rx="28" fill="#1f2030" stroke="#2a2c3d"/>
-    <text x="440" y="535" text-anchor="middle" fill="#22c55e">⚡ 24-hr rush</text>
+    <rect x="360" y="500" width="180" height="56" rx="28" fill="#1f2030" stroke="#2a2c3d"/>
+    <text x="450" y="535" text-anchor="middle" fill="#22c55e">🎨 Free seps</text>
 
     <rect x="560" y="500" width="240" height="56" rx="28" fill="#1f2030" stroke="#2a2c3d"/>
     <text x="680" y="535" text-anchor="middle" fill="#fff">💸 10% lifetime affiliate</text>

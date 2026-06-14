@@ -432,27 +432,9 @@ $('#sampleForm').addEventListener('submit', (e) => {
   btn.style.color = '#fff';
 });
 
-/* Reseller profit calc moved to reseller.js (its own page) */
+/* Reseller program removed from the site */
 
-/* ---------- Live social proof rotator ---------- */
-const proofs = [
-  '📍 Maya in Atlanta just ordered 250 heat transfers · 2 min ago',
-  '📍 Devin in Phoenix just reordered 500 heat transfers · 4 min ago',
-  '📍 Jenna in Brooklyn just approved her free proof · 7 min ago',
-  '📍 The Hollow Saints just ordered 80 tour-tee transfers · 11 min ago',
-  '📍 SignCity in Dallas just signed up for reseller pricing · 14 min ago',
-  '📍 Marcus in Tampa just ordered a $5 sample pack · 18 min ago',
-];
-let proofIdx = 0;
-setInterval(() => {
-  proofIdx = (proofIdx + 1) % proofs.length;
-  const el = $('#liveProof');
-  el.style.opacity = '0';
-  setTimeout(() => {
-    el.textContent = proofs[proofIdx];
-    el.style.opacity = '1';
-  }, 250);
-}, 5500);
+/* Live social-proof rotator removed (was fabricated order activity) */
 
 /* ---------- Exit intent modal ---------- */
 let modalShown = false;

@@ -1,6 +1,6 @@
 # Sketch It Graphics
 
-Custom heat transfer printing site — one product (custom heat transfers) with an instant online quote calculator, real color separation, and standalone affiliate + reseller pages.
+Custom heat transfer printing site — one product (custom heat transfers) with an instant online quote calculator, real color separation, and a standalone affiliate page.
 
 ## What's in here
 
@@ -10,7 +10,6 @@ A static multi-page site (HTML/CSS/JS — no build step):
 - **Real color separation** — uploads hit a Vercel Python function (`api/separate.py`, wraps the Spot Color Studio engine) returning the actual palette + a press-simulation preview
 - **Free color separation offer** — free to preview; order with us and it stays free forever. Don't order? Keep the print-ready files for a one-time $15, fully credited back on your first order
 - **Affiliate program** — `affiliate.html` — 10% lifetime commission, live earnings calculator, signup form
-- **Reseller program** — `reseller.html` — 10% wholesale discount, profit calculator
 - **Affiliate referral tracking** — `?ref=` / `/r/code` → 90-day first-touch cookie (runs on every page via `common.js`)
 - **Sample pack** — $5 with email capture
 - **SEO** — full JSON-LD structured data (Organization, OnlineStore, Product, FAQPage, HowTo, BreadcrumbList), sitemap, robots, OG/Twitter cards, web manifest
@@ -22,10 +21,10 @@ A static multi-page site (HTML/CSS/JS — no build step):
 | File | Purpose |
 |---|---|
 | `index.html` | Homepage — quote engine, single-product marketing, structured data |
-| `affiliate.html` / `reseller.html` | Standalone program pages |
+| `affiliate.html` | Standalone affiliate page |
 | `common.js` | Shared across all pages — `$`/`fmt`, consent defaults, affiliate referral capture, smooth scroll |
 | `script.js` | Homepage quote engine, color detection, checkout modal, persistence |
-| `affiliate.js` / `reseller.js` | Per-page calculators + forms |
+| `affiliate.js` | Affiliate calculator + signup form |
 | `styles.css` | Full stylesheet, mobile media queries, reduced-motion |
 | `api/` | Vercel Python color-separation function + vendored engine (see `api/README.md`) |
 | `sw.js` | Service worker — cache-first static, network-first HTML |
