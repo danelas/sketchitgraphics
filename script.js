@@ -3,46 +3,29 @@
    =================================================================== */
 
 /* ---------- Pricing model ----------
-   Per-transfer base price = basePerColor[type][colorBand] * sizeMult * qtyMult
-   - basePerColor scales with color count and method
-   - sizeMult: 1.0 at 11", linear from 0.6 (3") to 1.6 (16")
-   - qtyMult: volume break curve (qty 25 = 1.4x, 100 = 1.0x, 500 = 0.72x, 1000 = 0.58x)
-   - Flat $30 color-sep adder (waived on DTF since no separations)
-   - Rush adders: 72hr +$20, 48hr +$35, 24hr +$45
-   - SKETCH15 discount: 15% off subtotal
-   - Reseller discount: 15% off subtotal (stacks with first-order code? — no, larger applies)
+   Per-transfer base price = basePerColor[colorBand] * sizeMult * qtyMult
+   - One transfer/decal product; price scales with color count, size, and quantity
+   - sizeMult: 1.0 at an 11" equivalent square; driven by sqrt(width × height)
+   - qtyMult: volume break curve from 100 (1.0x) down to 10,000+ (0.42x)
+   - Color separation is FREE on every order ($30 value shown struck-through as an anchor)
+   - SKETCH10 first-order discount: 10% off subtotal
+   - "Not sure" color count → priced as a 4-color estimate until artwork is detected
 ------------------------------------------- */
 
-const PRICING = {
-  plastisol: {
-    1: 0.85, 2: 1.05, 3: 1.25, 4: 1.42, 5: 1.62, 6: 1.85, process: 2.10,
-  },
-  dtf: {
-    // DTF doesn't really care about color count — flat per size/qty
-    1: 1.30, 2: 1.30, 3: 1.30, 4: 1.30, 5: 1.30, 6: 1.30, process: 1.30,
-  },
-  screen: {
-    1: 0.62, 2: 0.84, 3: 1.04, 4: 1.24, 5: 1.46, 6: 1.68, process: 1.95,
-  },
-};
-const RUSH = { standard: 0, r72: 20, r48: 35, r24: 45 };
-const SEP_FEE = 30;
+const PRICING = { 1: 0.85, 2: 1.05, 3: 1.25, 4: 1.42, 5: 1.62, 6: 1.85, process: 2.10 };
+const SEP_VALUE = 30;   // anchor only — separation is free; shown struck-through in the breakdown
+const SEP_FEE = 0;      // applied fee: color separation is free on every order
 const FREE_SHIP_THRESHOLD = 200;
 
 const state = {
-  type: 'plastisol',
   colors: '2',
-  size: 11,
+  width: 11,
+  height: 11,
   qty: 100,
-  rush: 'standard',
   firstOrder: false,
-  reseller: false,
 };
 
-/* ---------- helpers ---------- */
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
-const fmt = (n) => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+/* helpers ($, $$, fmt) live in common.js, loaded before this file */
 
 function sizeMult(size) {
   // anchor: 11" = 1.0; 3" = 0.6; 16" = 1.6
@@ -51,47 +34,45 @@ function sizeMult(size) {
 }
 
 function qtyMult(qty) {
-  if (qty < 50)   return 1.40;
-  if (qty < 100)  return 1.15;
-  if (qty < 250)  return 1.00;
-  if (qty < 500)  return 0.85;
-  if (qty < 1000) return 0.72;
-  return 0.58;
+  if (qty < 250)   return 1.00;
+  if (qty < 500)   return 0.85;
+  if (qty < 1000)  return 0.72;
+  if (qty < 2500)  return 0.62;
+  if (qty < 5000)  return 0.55;
+  if (qty < 10000) return 0.48;
+  return 0.42;   // 10,000+
 }
 
 function qtyTierLabel(qty) {
-  if (qty < 50)   return '25–49';
-  if (qty < 100)  return '50–99';
-  if (qty < 250)  return '100–249';
-  if (qty < 500)  return '250–499';
-  if (qty < 1000) return '500–999';
-  return '1000+';
+  if (qty < 250)   return '100–249';
+  if (qty < 500)   return '250–499';
+  if (qty < 1000)  return '500–999';
+  if (qty < 2500)  return '1k–2.5k';
+  if (qty < 5000)  return '2.5k–5k';
+  if (qty < 10000) return '5k–10k';
+  return '10k+';
 }
 
 /* ---------- core calc ---------- */
 function calc() {
-  const base = PRICING[state.type][state.colors];
-  const per = base * sizeMult(state.size) * qtyMult(state.qty);
+  const base = PRICING[state.colors] || PRICING[4];   // "Not sure" → 4-color estimate
+  const size = Math.sqrt(Math.max(1, state.width * state.height));  // equivalent square side
+  const per = base * sizeMult(size) * qtyMult(state.qty);
   const subtotal = per * state.qty;
 
-  // DTF doesn't charge separation fee (no separations needed)
-  const sepFee = state.type === 'dtf' ? 0 : SEP_FEE;
-  const rushFee = RUSH[state.rush];
+  // Color separation is free on every order
+  const sepFee = SEP_FEE;
 
   let discount = 0;
   let discountLabel = '';
-  // Reseller wins over SKETCH15 (don't stack)
-  if (state.reseller) {
-    discount = subtotal * 0.15;
-    discountLabel = 'reseller';
-  } else if (state.firstOrder) {
-    discount = subtotal * 0.15;
+  if (state.firstOrder) {
+    discount = subtotal * 0.10;
     discountLabel = 'first';
   }
 
-  const total = Math.max(0, subtotal + sepFee + rushFee - discount);
+  const total = Math.max(0, subtotal + sepFee - discount);
 
-  return { per, subtotal, sepFee, rushFee, discount, discountLabel, total };
+  return { per, subtotal, sepFee, discount, discountLabel, total };
 }
 
 /* ---------- render ---------- */
@@ -105,24 +86,14 @@ function render() {
   $('#bdSub').textContent = fmt(r.subtotal);
   $('#bdTotal').textContent = fmt(r.total);
 
-  // Rush row
-  const rushRow = $('#rushRow');
-  if (r.rushFee > 0) {
-    rushRow.hidden = false;
-    $('#bdRush').textContent = '+' + fmt(r.rushFee);
-  } else {
-    rushRow.hidden = true;
-  }
-
-  // Discount rows
+  // Discount row (first-order code)
   $('#discRow').hidden = r.discountLabel !== 'first';
-  $('#resellerRow').hidden = r.discountLabel !== 'reseller';
   if (r.discountLabel === 'first') $('#bdDisc').textContent = '−' + fmt(r.discount);
-  if (r.discountLabel === 'reseller') $('#bdReseller').textContent = '−' + fmt(r.discount);
 
-  // Sep-fee row text
-  document.querySelectorAll('.bd-row')[1].style.opacity = state.type === 'dtf' ? '0.4' : '1';
-  document.querySelectorAll('.bd-row')[1].children[1].textContent = state.type === 'dtf' ? 'Waived (DTF)' : fmt(SEP_FEE);
+  // Color separation row — always free; show $30 struck-through as an anchor
+  const sepRow = document.querySelectorAll('.bd-row')[1];
+  sepRow.style.opacity = '1';
+  sepRow.children[1].innerHTML = `<s>${fmt(SEP_VALUE)}</s> FREE`;
 
   // Free shipping progress
   const remaining = Math.max(0, FREE_SHIP_THRESHOLD - r.total);
@@ -135,25 +106,19 @@ function render() {
   }
 
   // Qty tier markers
-  const tiers = ['25–49','50–99','100–249','250–499','500–999','1000+'];
+  const tiers = ['100–249','250–499','500–999','1k–2.5k','2.5k–5k','5k–10k','10k+'];
   const current = qtyTierLabel(state.qty);
   $('#qtyTiers').innerHTML = tiers.map(t => `<span class="${t === current ? 'hit' : ''}">${t}</span>`).join('');
 
-  // Size label with imperial
-  const s = state.size;
-  $('#sizeVal').textContent = `${s}" × ${s}"`;
-  $('#qtyVal').textContent = state.qty >= 1000 ? '1000+' : state.qty;
+  // Size (area) + quantity labels
+  $('#sizeVal').textContent = `${(state.width * state.height).toFixed(0)} sq in`;
+  $('#qtyVal').textContent = state.qty >= 10000 ? '10,000+' : state.qty.toLocaleString();
+  $('#qtyContact').hidden = state.qty < 10000;
 
-  // Color option behavior for DTF
-  const colorOpt = $('#colorOpt');
-  const colorHint = $('#colorHint');
-  if (state.type === 'dtf') {
-    colorOpt.style.opacity = '0.45';
-    colorHint.textContent = 'DTF supports unlimited colors — color count doesn\'t affect price.';
-  } else {
-    colorOpt.style.opacity = '1';
-    colorHint.textContent = 'Spot color = solid Pantone-style ink. Process = CMYK halftone for photo-real art.';
-  }
+  // Color hint — "Not sure" shows an estimate note
+  $('#colorHint').textContent = state.colors === 'unsure'
+    ? 'Not sure? Upload your art and we\'ll detect the exact colors — the price shown is an estimate.'
+    : 'Spot color = solid Pantone-style ink. Process = CMYK halftone for photo-real art.';
 }
 
 /* ---------- segment buttons ---------- */
@@ -167,15 +132,17 @@ function bindSeg(groupAttr, key, transform) {
     });
   });
 }
-bindSeg('type', 'type');
 bindSeg('colors', 'colors');
-bindSeg('rush', 'rush');
 
-/* sliders */
-$('#sizeRange').addEventListener('input', (e) => {
-  state.size = parseFloat(e.target.value);
-  render();
+/* size — exact width × height inputs */
+['widthIn', 'heightIn'].forEach(id => {
+  $('#' + id).addEventListener('input', (e) => {
+    const v = parseFloat(e.target.value);
+    state[id === 'widthIn' ? 'width' : 'height'] = (isFinite(v) && v > 0) ? v : 0;
+    render();
+  });
 });
+/* quantity slider (100 – 10,000) */
 $('#qtyRange').addEventListener('input', (e) => {
   state.qty = parseInt(e.target.value, 10);
   render();
@@ -184,10 +151,6 @@ $('#qtyRange').addEventListener('input', (e) => {
 /* toggles */
 $('#firstOrder').addEventListener('change', (e) => {
   state.firstOrder = e.target.checked;
-  render();
-});
-$('#resellerCheck').addEventListener('change', (e) => {
-  state.reseller = e.target.checked;
   render();
 });
 
@@ -238,7 +201,7 @@ function handleFile(file) {
     analysis.hidden = false;
     $('#detectedColors').textContent = 'Vector (any)';
     $('#palette').innerHTML = '';
-    $('#recMethod').textContent = state.type === 'dtf' ? 'DTF' : 'Plastisol';
+    $('#recMethod').textContent = 'Reviewed after upload';
     $('#tip').innerHTML = '💡 Vector file — we\'ll separate colors after upload review.';
     return;
   }
@@ -248,7 +211,8 @@ function handleFile(file) {
     previewImg.src = e.target.result;
     dzEmpty.hidden = true;
     dzPreview.hidden = false;
-    analyzeImage(e.target.result);
+    analyzeImage(e.target.result);        // instant client-side estimate
+    requestRealSeparation(e.target.result); // real engine result replaces it when ready
   };
   reader.readAsDataURL(file);
 }
@@ -294,32 +258,22 @@ function analyzeImage(dataUrl) {
 
     // Render analysis
     analysis.hidden = false;
-    $('#detectedColors').textContent = distinct === 12 ? '12+ (process color)' : distinct;
+    $('#detectedColors').textContent = distinct >= 7 ? '7+ (process)' : distinct;
     $('#palette').innerHTML = palette.map(c => `<div style="background:${c}"></div>`).join('');
 
-    // Recommendation
+    // Recommendation (color setup only — one transfer product)
     let rec, tip;
     if (distinct >= 7) {
-      rec = 'DTF (unlimited color)';
-      tip = '💡 7+ colors detected — DTF is cheaper here than process-color plastisol.';
-      // auto-suggest DTF
-      autoPickType('dtf');
-    } else if (distinct >= 5) {
-      rec = 'Plastisol (5–6 spot)';
-      tip = '💡 Multi-color spot design — plastisol gives the most durable result.';
+      rec = '4-color process';
+      tip = '💡 7+ colors detected — we\'ll print this as full-color process.';
+      autoPickColors('process');
     } else {
-      rec = `Plastisol (${distinct} spot color)`;
-      tip = `💡 ${distinct} clean spot color${distinct>1?'s':''} — perfect for plastisol or screen-print.`;
+      rec = `${distinct} spot color${distinct > 1 ? 's' : ''}`;
+      tip = `💡 ${distinct} clean spot color${distinct > 1 ? 's' : ''} — perfect for a transfer.`;
+      if (distinct >= 1) autoPickColors(String(distinct));
     }
     $('#recMethod').textContent = rec;
     $('#tip').innerHTML = tip;
-
-    // Auto-select detected color count if it differs (for plastisol)
-    if (distinct >= 1 && distinct <= 6 && state.type !== 'dtf') {
-      autoPickColors(String(distinct));
-    } else if (distinct >= 7 && state.type !== 'dtf') {
-      autoPickColors('process');
-    }
   };
   img.src = dataUrl;
 }
@@ -332,13 +286,63 @@ function autoPickColors(val) {
   state.colors = val;
   render();
 }
-function autoPickType(val) {
-  const btn = document.querySelector(`.seg[data-group="type"] .seg-btn[data-val="${val}"]`);
-  if (!btn) return;
-  btn.parentElement.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  state.type = val;
-  render();
+
+/* ---------- Real color separation via the engine API ---------- */
+// Same-origin Vercel Python function (api/separate.py). If you host the API on a
+// different domain than the static site, set the full https URL here instead.
+const SEP_API = '/api/separate';
+let sepReqId = 0;
+
+async function requestRealSeparation(dataUrl) {
+  const sp = $('#sepPreview');
+  const myId = ++sepReqId;               // ignore stale responses if a new file is dropped
+  sp.classList.remove('is-error');
+  sp.hidden = false;
+  $('#sepStatus').textContent = 'Separating…';
+  $('#sepPreviewImg').removeAttribute('src');
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(SEP_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl, colors: null, garment: 'dark' }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error('api ' + res.status);
+    const data = await res.json();
+    if (myId !== sepReqId) return;        // a newer upload superseded this one
+    if (data.error) throw new Error(data.error);
+
+    $('#sepPreviewImg').src = data.preview;
+    $('#sepStatus').textContent = '✓ ' + data.count + (data.count === 1 ? ' color' : ' colors');
+    applyDetection(data.count, data.colors);
+  } catch (err) {
+    if (myId !== sepReqId) return;
+    // No backend reachable (e.g. plain static host) or it errored — keep the
+    // instant client-side estimate and hide the live panel quietly.
+    sp.hidden = true;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* Apply the engine's real result over the instant estimate. */
+function applyDetection(count, colors) {
+  $('#detectedColors').textContent = count >= 7 ? '7+ (process)' : count;
+  if (Array.isArray(colors) && colors.length) {
+    $('#palette').innerHTML = colors.map(c => `<div style="background:${c}"></div>`).join('');
+  }
+  if (count >= 7) {
+    $('#recMethod').textContent = '4-color process';
+    $('#tip').innerHTML = '💡 ' + count + '+ colors — we\'ll print this as full-color process.';
+    autoPickColors('process');
+  } else {
+    $('#recMethod').textContent = `${count} spot color${count > 1 ? 's' : ''}`;
+    $('#tip').innerHTML = `💡 ${count} clean spot color${count > 1 ? 's' : ''} — perfect for a transfer.`;
+    if (count >= 1 && count <= 6) autoPickColors(String(count));
+  }
 }
 
 /* ---------- Quote actions ---------- */
@@ -353,10 +357,65 @@ $('#saveQuote').addEventListener('click', () => {
   setTimeout(() => { $('#saveQuote').textContent = 'Email me this quote'; }, 2400);
 });
 
-$('#checkoutBtn').addEventListener('click', () => {
+/* ---------- Checkout step — order summary + free-separation pitch ---------- */
+const checkoutModal = $('#checkoutModal');
+const checkoutTemplate = checkoutModal.querySelector('.modal-box').innerHTML;
+
+function closeCheckout() { checkoutModal.hidden = true; }
+
+function colorLabel(c) {
+  if (c === 'process') return '4-color process';
+  if (c === 'unsure') return 'colors to be confirmed';
+  return c + (c === '1' ? ' color' : ' colors');
+}
+
+function openCheckout() {
   const r = calc();
-  alert(`Checkout preview\n\nType: ${state.type.toUpperCase()}\nColors: ${state.colors}\nSize: ${state.size}" × ${state.size}"\nQty: ${state.qty}\nRush: ${state.rush}\n\nPer transfer: ${fmt(r.per)}\nTotal: ${fmt(r.total)}\n\n(Real checkout would integrate Stripe + Shopify here.)`);
-});
+  const box = checkoutModal.querySelector('.modal-box');
+  box.innerHTML = checkoutTemplate;   // restore the summary view on every open
+
+  box.querySelector('#coSummary').innerHTML = `
+    <div class="co-row co-spec"><span>${colorLabel(state.colors)} · ${state.width}"×${state.height}"</span><b>${state.qty.toLocaleString()} pcs</b></div>
+    <div class="co-row"><span>Transfers (${state.qty.toLocaleString()} × ${fmt(r.per)})</span><b>${fmt(r.subtotal)}</b></div>
+    <div class="co-row"><span>Color separation</span><b class="co-free"><s>${fmt(SEP_VALUE)}</s> FREE</b></div>
+    ${r.discount > 0 ? `<div class="co-row co-disc"><span>SKETCH10 discount</span><b>−${fmt(r.discount)}</b></div>` : ''}
+    <div class="co-row co-total"><span>Order total</span><b>${fmt(r.total)}</b></div>`;
+
+  box.querySelector('#checkoutClose').addEventListener('click', closeCheckout);
+
+  box.querySelector('#coPlace').addEventListener('click', () => {
+    box.innerHTML = `
+      <button class="modal-close" onclick="document.getElementById('checkoutModal').hidden=true">✕</button>
+      <div class="modal-eyebrow">✓ Order received</div>
+      <h3>You're all set</h3>
+      <p>We've got your order — your free digital proof lands in your inbox within 4 business hours. <small>(Demo: real checkout wires Stripe + Shopify here.)</small></p>
+      <button class="btn btn-primary btn-block" onclick="document.getElementById('checkoutModal').hidden=true">Done</button>`;
+  });
+
+  box.querySelector('#coKeepSeps').addEventListener('click', () => {
+    box.innerHTML = `
+      <button class="modal-close" onclick="document.getElementById('checkoutModal').hidden=true">✕</button>
+      <div class="modal-eyebrow">🎨 Free separations</div>
+      <h3>We'll separate your art — free</h3>
+      <p>Drop your email and we'll send your print-ready separations free to preview. Order and they're yours at no charge. Want the final files without ordering yet? A one-time <b>$15</b> — credited back the moment you place your first order.</p>
+      <form id="coSepForm"><input type="email" placeholder="your@email.com" required /><button class="btn btn-primary" type="submit">Send my free separations</button></form>
+      <small class="micro">No spam — we'll only email about your separations.</small>`;
+    box.querySelector('#coSepForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      box.innerHTML = `
+        <button class="modal-close" onclick="document.getElementById('checkoutModal').hidden=true">✕</button>
+        <div class="modal-eyebrow">✓ On its way</div>
+        <h3>Check your inbox</h3>
+        <p>Your free proof is being prepared. We'll be in touch within 4 business hours.</p>
+        <button class="btn btn-primary btn-block" onclick="document.getElementById('checkoutModal').hidden=true">Got it</button>`;
+    });
+  });
+
+  checkoutModal.hidden = false;
+}
+
+$('#checkoutBtn').addEventListener('click', openCheckout);
+checkoutModal.addEventListener('click', (e) => { if (e.target === checkoutModal) closeCheckout(); });
 
 $('#reorderBtn').addEventListener('click', () => {
   const code = prompt('Enter your reorder code (e.g., SKG-7G2K-9X):');
@@ -373,28 +432,13 @@ $('#sampleForm').addEventListener('submit', (e) => {
   btn.style.color = '#fff';
 });
 
-/* ---------- Reseller profit calc ---------- */
-function calcReseller() {
-  const cost = parseFloat($('#rcCost').value) || 0;
-  const shirt = parseFloat($('#rcShirt').value) || 0;
-  const retail = parseFloat($('#rcRetail').value) || 0;
-  const units = parseInt($('#rcUnits').value, 10) || 0;
-  const margin = retail - cost - shirt;
-  const profit = margin * units;
-  const pct = retail > 0 ? Math.round((margin / retail) * 100) : 0;
-  $('#rcMargin').textContent = fmt(margin);
-  $('#rcProfit').textContent = fmt(profit);
-  $('#rcPct').textContent = pct + '%';
-}
-['rcCost','rcShirt','rcRetail','rcUnits'].forEach(id => {
-  $('#' + id).addEventListener('input', calcReseller);
-});
+/* Reseller profit calc moved to reseller.js (its own page) */
 
 /* ---------- Live social proof rotator ---------- */
 const proofs = [
-  '📍 Maya in Atlanta just ordered 250 DTF transfers · 2 min ago',
-  '📍 Devin in Phoenix just reordered 500 plastisol transfers · 4 min ago',
-  '📍 Jenna in Brooklyn just upgraded to 24hr rush · 7 min ago',
+  '📍 Maya in Atlanta just ordered 250 heat transfers · 2 min ago',
+  '📍 Devin in Phoenix just reordered 500 heat transfers · 4 min ago',
+  '📍 Jenna in Brooklyn just approved her free proof · 7 min ago',
   '📍 The Hollow Saints just ordered 80 tour-tee transfers · 11 min ago',
   '📍 SignCity in Dallas just signed up for reseller pricing · 14 min ago',
   '📍 Marcus in Tampa just ordered a $5 sample pack · 18 min ago',
@@ -431,7 +475,7 @@ $('#exitForm').addEventListener('submit', (e) => {
   box.innerHTML = `
     <div class="modal-eyebrow">✓ You're in</div>
     <h3>Check your inbox</h3>
-    <p>Your <b>SKETCH15</b> code + sample pack offer are on the way. Talk soon.</p>
+    <p>Your <b>SKETCH10</b> code + sample pack offer are on the way. Talk soon.</p>
     <button class="btn btn-primary" onclick="document.getElementById('exitModal').hidden=true">Got it</button>
   `;
 });
@@ -441,177 +485,9 @@ $('#chatBubble').addEventListener('click', () => {
   alert('Live chat\n\nHi! Real version would open Intercom/Crisp/Tidio.\n\nText us now: (800) 555-1234\nEmail: hello@sketchitgraphics.com');
 });
 
-/* ---------- smooth scroll on nav links ---------- */
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', (e) => {
-    const tgt = a.getAttribute('href');
-    if (tgt.length > 1 && document.querySelector(tgt)) {
-      e.preventDefault();
-      document.querySelector(tgt).scrollIntoView({ behavior:'smooth', block:'start' });
-    }
-  });
-});
+/* smooth scroll on nav links moved to common.js */
 
-/* ===================================================================
-   COOKIE CONSENT — GDPR/CCPA compliant
-   Categories: necessary (forced), functional, affiliate, analytics, marketing
-   Stored in: localStorage 'sketch_consent' = { v, ts, func, aff, ana, mkt }
-   =================================================================== */
-
-const CONSENT_KEY = 'sketch_consent';
-const CONSENT_VERSION = 1;
-
-function getConsent() {
-  try {
-    const raw = localStorage.getItem(CONSENT_KEY);
-    if (!raw) return null;
-    const p = JSON.parse(raw);
-    if (p.v !== CONSENT_VERSION) return null;
-    return p;
-  } catch { return null; }
-}
-
-function saveConsent(prefs) {
-  const payload = { v: CONSENT_VERSION, ts: Date.now(), ...prefs };
-  try { localStorage.setItem(CONSENT_KEY, JSON.stringify(payload)); } catch {}
-  applyConsent(payload);
-  hideCookieBanner();
-}
-
-function applyConsent(c) {
-  // Surface a global so other scripts can branch on consent
-  window.__consent = c;
-  // Fire tag managers / pixels only if consented
-  if (c.ana) loadAnalytics();
-  if (c.mkt) loadMarketingPixels();
-  if (!c.aff) clearAffiliateCookie();
-}
-
-function showCookieBanner() {
-  const b = $('#cookieBanner');
-  if (!b) return;
-  b.hidden = false;
-  requestAnimationFrame(() => b.classList.add('show'));
-  document.body.classList.add('cookie-open');
-}
-function hideCookieBanner() {
-  const b = $('#cookieBanner');
-  if (!b) return;
-  b.classList.remove('show');
-  document.body.classList.remove('cookie-open');
-  setTimeout(() => { b.hidden = true; }, 320);
-}
-
-function bindCookieBanner() {
-  if (!$('#cookieBanner')) return;
-  $('#cookieAccept')?.addEventListener('click', () => {
-    saveConsent({ func:true, aff:true, ana:true, mkt:true });
-  });
-  $('#cookieReject')?.addEventListener('click', () => {
-    saveConsent({ func:false, aff:false, ana:false, mkt:false });
-  });
-  const openPrefs = () => {
-    const p = $('#cookiePrefs');
-    if (p) p.hidden = false;
-  };
-  $('#cookieCustomize')?.addEventListener('click', openPrefs);
-  $('#cookieMore')?.addEventListener('click', (e) => { e.preventDefault(); openPrefs(); });
-  $('#cookieSavePrefs')?.addEventListener('click', () => {
-    saveConsent({
-      func: $('#ckFunc').checked,
-      aff:  $('#ckAff').checked,
-      ana:  $('#ckAna').checked,
-      mkt:  $('#ckMkt').checked,
-    });
-  });
-}
-
-/* Placeholders — wire to real GTM/Plausible/Meta when ready */
-function loadAnalytics() { /* GA4 / Plausible loader goes here */ }
-function loadMarketingPixels() { /* Meta + TikTok + GA Ads loaders go here */ }
-
-/* ===================================================================
-   AFFILIATE REFERRAL TRACKING
-   Captures ?ref=code or /r/code from URL, stores in a 90-day cookie
-   (with SameSite=Lax; Secure) — only if user consented to affiliate.
-   =================================================================== */
-
-const AFFILIATE_COOKIE = 'sketch_ref';
-const AFFILIATE_DAYS = 90;
-
-function setCookie(name, value, days, opts = {}) {
-  const exp = new Date(Date.now() + days * 864e5).toUTCString();
-  const sameSite = opts.sameSite || 'Lax';
-  const secure = location.protocol === 'https:' ? '; Secure' : '';
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${exp}; path=/; SameSite=${sameSite}${secure}`;
-}
-function getCookie(name) {
-  return document.cookie.split('; ').reduce((acc, c) => {
-    const [k, v] = c.split('=');
-    return k === name ? decodeURIComponent(v || '') : acc;
-  }, '');
-}
-function clearAffiliateCookie() {
-  document.cookie = `${AFFILIATE_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-}
-
-function captureAffiliateRef() {
-  const consent = getConsent();
-  // If user hasn't consented yet, stash in sessionStorage so we don't lose attribution while banner is up
-  let ref = '';
-  const params = new URLSearchParams(location.search);
-  if (params.has('ref')) ref = params.get('ref');
-  // Path form: /r/code
-  const pathMatch = location.pathname.match(/^\/r\/([a-z0-9-]{3,40})/i);
-  if (pathMatch) ref = pathMatch[1];
-
-  if (!ref) return;
-
-  // Sanitize
-  ref = ref.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40);
-  if (!ref) return;
-
-  // Don't overwrite existing attribution (first-touch wins)
-  const existing = getCookie(AFFILIATE_COOKIE);
-  if (existing) return;
-
-  if (consent && consent.aff) {
-    setCookie(AFFILIATE_COOKIE, ref, AFFILIATE_DAYS);
-  } else {
-    // Hold in session until consent
-    sessionStorage.setItem('pending_ref', ref);
-  }
-
-  // Banner so user knows they're attributed
-  flashAffiliateBadge(ref);
-}
-
-function flashAffiliateBadge(ref) {
-  const el = document.createElement('div');
-  el.className = 'aff-flash';
-  el.innerHTML = `🎯 Referred by <b>${ref}</b> — they'll earn commission on your order`;
-  Object.assign(el.style, {
-    position:'fixed', top:'80px', left:'50%', transform:'translateX(-50%)',
-    background:'#171823', border:'1px solid #ff5a1f', color:'#fff',
-    padding:'10px 18px', borderRadius:'999px', fontSize:'.85rem',
-    zIndex:'95', boxShadow:'0 12px 28px rgba(0,0,0,.5)', maxWidth:'90vw',
-  });
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 6000);
-}
-
-/* If consent comes through later, promote pending_ref to a real cookie */
-const _origApply = applyConsent;
-applyConsent = function(c) {
-  _origApply(c);
-  if (c.aff) {
-    const pending = sessionStorage.getItem('pending_ref');
-    if (pending && !getCookie(AFFILIATE_COOKIE)) {
-      setCookie(AFFILIATE_COOKIE, pending, AFFILIATE_DAYS);
-      sessionStorage.removeItem('pending_ref');
-    }
-  }
-};
+/* Consent + affiliate referral tracking moved to common.js (runs on every page) */
 
 /* ===================================================================
    QUOTE STATE PERSISTENCE
@@ -637,13 +513,11 @@ function restoreQuoteState() {
     const saved = JSON.parse(raw);
     Object.assign(state, saved);
     // Re-sync UI to saved state
-    syncSegFromState('type', state.type);
     syncSegFromState('colors', state.colors);
-    syncSegFromState('rush', state.rush);
-    $('#sizeRange').value = state.size;
+    $('#widthIn').value = state.width;
+    $('#heightIn').value = state.height;
     $('#qtyRange').value = state.qty;
     $('#firstOrder').checked = !!state.firstOrder;
-    $('#resellerCheck').checked = !!state.reseller;
     render();
   } catch {}
 }
@@ -691,32 +565,9 @@ render = function () {
    =================================================================== */
 
 function init() {
-  // 1) Restore prior consent (or show banner)
-  const existing = getConsent();
-  if (existing) {
-    applyConsent(existing);
-  } else {
-    // Defer banner so it doesn't compete with hero render
-    requestAnimationFrame(() => setTimeout(showCookieBanner, 800));
-  }
-  bindCookieBanner();
-
-  // 2) Affiliate ref capture
-  captureAffiliateRef();
-
-  // 3) Pre-fill affiliate signup form code if user is signing up
-  const refInput = $('#afCode');
-  const referredBy = getCookie(AFFILIATE_COOKIE);
-  if (refInput && referredBy && !refInput.value) {
-    // Don't pre-fill someone else's code — leave empty
-  }
-
-  // 4) Restore previous quote draft
-  restoreQuoteState();
-
-  // 5) Initial paint
-  render();
-  calcReseller();
+  // Consent + affiliate referral capture run in common.js (every page).
+  restoreQuoteState();   // restore previous quote draft
+  render();              // initial paint
 }
 
 // Run init when DOM is ready

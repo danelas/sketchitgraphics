@@ -1,28 +1,33 @@
 # Sketch It Graphics
 
-Custom heat transfer printing site — plastisol, DTF gang sheets, and screen-print transfers with an instant online quote calculator.
+Custom heat transfer printing site — one product (custom heat transfers) with an instant online quote calculator, real color separation, and standalone affiliate + reseller pages.
 
 ## What's in here
 
-A static single-page site (HTML/CSS/JS — no build step) featuring:
+A static multi-page site (HTML/CSS/JS — no build step):
 
-- **Instant quote engine** — drag-and-drop artwork upload with auto-color detection, live pricing across transfer type / colors / size / quantity / rush
-- **Flat $30 color separation** (waived on DTF)
-- **Affiliate program** — 10% lifetime commission with referral code capture and earnings calculator
-- **Reseller program** — 15% wholesale discount with profit calculator
+- **Instant quote engine** (homepage) — drag-and-drop upload with real color separation; live pricing across colors / size (exact W×H) / quantity (100–10,000)
+- **Real color separation** — uploads hit a Vercel Python function (`api/separate.py`, wraps the Spot Color Studio engine) returning the actual palette + a press-simulation preview
+- **Free color separation offer** — free to preview; order with us and it stays free forever. Don't order? Keep the print-ready files for a one-time $15, fully credited back on your first order
+- **Affiliate program** — `affiliate.html` — 10% lifetime commission, live earnings calculator, signup form
+- **Reseller program** — `reseller.html` — 10% wholesale discount, profit calculator
+- **Affiliate referral tracking** — `?ref=` / `/r/code` → 90-day first-touch cookie (runs on every page via `common.js`)
 - **Sample pack** — $5 with email capture
 - **SEO** — full JSON-LD structured data (Organization, OnlineStore, Product, FAQPage, HowTo, BreadcrumbList), sitemap, robots, OG/Twitter cards, web manifest
-- **Mobile perf** — service worker caching, inlined critical CSS, `content-visibility` for below-fold, reduced-motion support, passive listeners
-- **GDPR/CCPA cookie consent** — 5-category banner with affiliate referral tracking that respects consent
+- **Mobile perf** — service worker caching, inlined critical CSS, reduced-motion support, passive listeners
 - **Quote draft auto-save** to localStorage
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `index.html` | Page markup, meta, structured data, inlined critical CSS |
-| `styles.css` | Full stylesheet, mobile media queries, cookie banner, reduced-motion |
-| `script.js` | Quote engine, color detection, cookie consent, affiliate capture, persistence |
+| `index.html` | Homepage — quote engine, single-product marketing, structured data |
+| `affiliate.html` / `reseller.html` | Standalone program pages |
+| `common.js` | Shared across all pages — `$`/`fmt`, consent defaults, affiliate referral capture, smooth scroll |
+| `script.js` | Homepage quote engine, color detection, checkout modal, persistence |
+| `affiliate.js` / `reseller.js` | Per-page calculators + forms |
+| `styles.css` | Full stylesheet, mobile media queries, reduced-motion |
+| `api/` | Vercel Python color-separation function + vendored engine (see `api/README.md`) |
 | `sw.js` | Service worker — cache-first static, network-first HTML |
 | `site.webmanifest` | PWA manifest with app shortcuts |
 | `favicon.svg` | Vector favicon |

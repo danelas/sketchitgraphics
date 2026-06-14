@@ -8,7 +8,7 @@
      - All non-GET requests bypass cache
    =================================================================== */
 
-const VERSION = 'sketchit-v1.0.0';
+const VERSION = 'sketchit-v1.4.0';
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const FONT_CACHE = `${VERSION}-fonts`;
@@ -16,8 +16,13 @@ const FONT_CACHE = `${VERSION}-fonts`;
 const PRECACHE_URLS = [
   '/',
   '/index.html',
+  '/affiliate.html',
+  '/reseller.html',
   '/styles.css',
+  '/common.js',
   '/script.js',
+  '/affiliate.js',
+  '/reseller.js',
   '/favicon.svg',
   '/site.webmanifest',
   '/og-image.svg',

@@ -16,6 +16,12 @@ npm-debug.log
 yarn-error.log
 .pnpm-debug.log
 
+# Python (api/ serverless function)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
 # Env / secrets
 .env
 .env.local

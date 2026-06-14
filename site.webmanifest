@@ -1,7 +1,7 @@
 {
   "name": "Sketch It Graphics — Custom Heat Transfers",
   "short_name": "Sketch It Graphics",
-  "description": "Custom plastisol, DTF, and screen-print heat transfers with instant online quotes and flat $30 color separation.",
+  "description": "Custom heat transfers with instant online quotes and free color separation.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -53,7 +53,7 @@
     {
       "name": "Affiliate signup",
       "short_name": "Affiliate",
-      "url": "/#affiliate",
+      "url": "/affiliate.html",
       "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     }
   ]
