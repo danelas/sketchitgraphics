@@ -346,11 +346,19 @@ def solid_separation(
     H, W, _ = rgb.shape
     lab = rgb_to_lab(rgb).reshape(-1, 3)
     ink_lab = rgb_to_lab(inks)                               # (K, 3)
-    d = ((lab[:, None, :] - ink_lab[None, :, :]) ** 2).sum(-1)  # (N, K)
-    labels = np.argmin(d, axis=1)
-    cov = np.zeros((lab.shape[0], inks.shape[0]), dtype=np.float32)
-    cov[np.arange(lab.shape[0]), labels] = 1.0
-    cov = cov.reshape(H, W, inks.shape[0])
+    N, K = lab.shape[0], inks.shape[0]
+    # Assign the nearest ink in chunks. The full (N, K, 3) distance array is
+    # N*K*3*4 bytes — over 1 GiB on large / AI-upscaled art — so do it in
+    # blocks to keep peak memory to a few hundred MB regardless of image size.
+    labels = np.empty(N, dtype=np.intp)
+    CHUNK = 1_000_000
+    for s in range(0, N, CHUNK):
+        e = min(s + CHUNK, N)
+        d = ((lab[s:e, None, :] - ink_lab[None, :, :]) ** 2).sum(-1)  # (chunk, K)
+        labels[s:e] = np.argmin(d, axis=1)
+    cov = np.zeros((N, K), dtype=np.float32)
+    cov[np.arange(N), labels] = 1.0
+    cov = cov.reshape(H, W, K)
     if alpha is not None:
         cov = cov * alpha[..., None]
     return cov
